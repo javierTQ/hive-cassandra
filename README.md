@@ -10,15 +10,15 @@ Fork of https://github.com/2013Commons/hive-cassandra that fix project to read f
 <ol>
 <li>Create in cassandra a keyspace and a table with some data:</li>
 
-CREATE KEYSPACE bigdata WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 } ;
+CREATE KEYSPACE bigdata WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 } ; </br>
 
-use bigdata ;
+use bigdata ;</br>
 
-CREATE TABLE test (key int PRIMARY KEY, data text);
+CREATE TABLE test (key int PRIMARY KEY, data text);</br>
 
-INSERT INTO test (key, data ) VALUES ( 1, 'This data can be read automatically in hive');
+INSERT INTO test (key, data ) VALUES ( 1, 'This data can be read automatically in hive');</br>
 
-SELECT * FROM test;
+SELECT * FROM test;</br>
 
 <li>Install the project:</li>
 
@@ -35,15 +35,15 @@ whick are in the project/target and project/target/dependency.
 
 <li>Create a database:</li>
 
-CREATE DATABASE bigdata;\n
+CREATE DATABASE bigdata;</br>
 
-use bigdata;\n
+use bigdata;</br>
 
 <li>Create a external table in hive and read the information contain in cassandra:<li>
 
-CREATE EXTERNAL TABLE hivetable (key int, data string) STORED BY 'org.apache.hadoop.hive.cassandra.cql.CqlStorageHandler' TBLPROPERTIES ("cassandra.ks.name" = "bigdata", "cassandra.cf.name" = "test");\n
+CREATE EXTERNAL TABLE hivetable (key int, data string) STORED BY 'org.apache.hadoop.hive.cassandra.cql.CqlStorageHandler' TBLPROPERTIES ("cassandra.ks.name" = "bigdata", "cassandra.cf.name" = "test");</br>
 
-SELECT * FROM hivetable;\n
+SELECT * FROM hivetable;</br>
 
 </ol>
 
