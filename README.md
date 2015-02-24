@@ -35,15 +35,15 @@ whick are in the project/target and project/target/dependency.
 
 <li>Create a database:</li>
 
-CREATE DATABASE bigdata;
+CREATE DATABASE bigdata;\n
 
-use bigdata;
+use bigdata;\n
 
-<li>Create a external table in hive and read the information contain in cassandra:</li>
+<li>Create a external table in hive and read the information contain in cassandra:<li>
 
-CREATE EXTERNAL TABLE hivetable (key int, data string) STORED BY 'org.apache.hadoop.hive.cassandra.cql.CqlStorageHandler' TBLPROPERTIES ("cassandra.ks.name" = "bigdata", "cassandra.cf.name" = "test");
+CREATE EXTERNAL TABLE hivetable (key int, data string) STORED BY 'org.apache.hadoop.hive.cassandra.cql.CqlStorageHandler' TBLPROPERTIES ("cassandra.ks.name" = "bigdata", "cassandra.cf.name" = "test");\n
 
-SELECT * FROM hivetable;
+SELECT * FROM hivetable;\n
 
 </ol>
 
