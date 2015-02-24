@@ -6,7 +6,9 @@ Fork of https://github.com/2013Commons/hive-cassandra that fix project to read f
 
 ==============
 
-1. Create in cassandra a keyspace and a table with some data:
+
+<ol>
+<li>Create in cassandra a keyspace and a table with some data:</li>
 
 CREATE KEYSPACE bigdata WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 } ;
 
@@ -18,11 +20,11 @@ INSERT INTO test (key, data ) VALUES ( 1, 'This data can be read automatically i
 
 SELECT * FROM test;
 
-2. Install the project:
+<li>Install the project:</li>
 
-a. Git project and compile it.
+	a. Git project and compile it.
 
-b. Add those jars to hive classpath.
+	b. Add those jars to hive classpath.
 
 Those jar are : 
 cassandra-all-2.0.4.jar, 
@@ -31,18 +33,19 @@ hive-0.14.0-hadoop-2.0.0-cassandra-2.0-0.0.1.jar,
 
 whick are in the project/target and project/target/dependency.
 
-3. Create a database:
+<li>Create a database:</li>
 
 CREATE DATABASE bigdata;
 
 use bigdata;
 
-4. Create a external table in hive and read the information contain in cassandra:
+<li>Create a external table in hive and read the information contain in cassandra:</li>
 
 CREATE EXTERNAL TABLE hivetable (key int, data string) STORED BY 'org.apache.hadoop.hive.cassandra.cql.CqlStorageHandler' TBLPROPERTIES ("cassandra.ks.name" = "bigdata", "cassandra.cf.name" = "test");
 
 SELECT * FROM hivetable;
 
+</ol>
 
 ========================================================================================================================
 References:
