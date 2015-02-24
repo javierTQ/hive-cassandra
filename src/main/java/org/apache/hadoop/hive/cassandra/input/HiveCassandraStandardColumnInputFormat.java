@@ -263,7 +263,7 @@ public class HiveCassandraStandardColumnInputFormat extends InputFormat<BytesWri
             return null;
         }
 
-        ExprNodeDesc filterExpr = Utilities.deserializeExpression(filterExprSerialized, jobConf);
+        ExprNodeDesc filterExpr = Utilities.deserializeExpression(filterExprSerialized);
         String encodedIndexedColumns = jobConf.get(AbstractCassandraSerDe.CASSANDRA_INDEXED_COLUMNS);
         Set<ColumnDef> indexedColumns = CassandraPushdownPredicate.deserializeIndexedColumns(encodedIndexedColumns);
         if (indexedColumns.isEmpty()) {

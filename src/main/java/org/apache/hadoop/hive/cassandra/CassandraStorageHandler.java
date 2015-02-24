@@ -19,8 +19,10 @@ import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.metadata.HiveStorageHandler;
 import org.apache.hadoop.hive.ql.metadata.HiveStoragePredicateHandler;
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
+import org.apache.hadoop.hive.ql.plan.ExprNodeGenericFuncDesc;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.ql.security.authorization.HiveAuthorizationProvider;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.mapred.InputFormat;
@@ -332,6 +334,7 @@ public class CassandraStorageHandler
             IndexPredicateAnalyzer analyzer = CassandraPushdownPredicate.newIndexPredicateAnalyzer(indexedColumns);
             List<IndexSearchCondition> searchConditions = new ArrayList<IndexSearchCondition>();
             ExprNodeDesc residualPredicate = analyzer.analyzePredicate(predicate, searchConditions);
+            //new ExprNodeGenericFuncDesc(predicate.getTypeInfo(), , predicate.getChildren());
 
             if (searchConditions.isEmpty()) {
                 return null;
@@ -343,7 +346,7 @@ public class CassandraStorageHandler
 
             DecomposedPredicate decomposedPredicate = new DecomposedPredicate();
             decomposedPredicate.pushedPredicate = analyzer.translateSearchConditions(searchConditions);
-            decomposedPredicate.residualPredicate = residualPredicate;
+            decomposedPredicate.residualPredicate = (ExprNodeGenericFuncDesc) residualPredicate;
 
             return decomposedPredicate;
         } catch (CassandraException e) {
@@ -352,5 +355,11 @@ public class CassandraStorageHandler
             return null;
         }
     }
+
+	@Override
+	public void configureJobConf(TableDesc table, JobConf jobConf) {
+        jobConf.setOutputFormat(table.getOutputFileFormatClass());
+        jobConf.setInputFormat(table.getInputFileFormatClass());
+	}
 
 }

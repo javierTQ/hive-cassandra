@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Set;
 import org.apache.hadoop.hive.cassandra.cql.CqlPushdownPredicate;
 
-@SuppressWarnings("deprecation")
 public class HiveCqlInputFormat extends InputFormat<MapWritableComparable, MapWritable>
         implements org.apache.hadoop.mapred.InputFormat<MapWritableComparable, MapWritable> {
 
@@ -175,7 +174,7 @@ public class HiveCqlInputFormat extends InputFormat<MapWritableComparable, MapWr
      */
     private List<ByteBuffer> getColumnNames(List<String> columns, List<Integer> readColIDs) {
 
-        List<ByteBuffer> results = new ArrayList();
+        List<ByteBuffer> results = new ArrayList<ByteBuffer>();
         int maxSize = columns.size();
 
         for (Integer i : readColIDs) {
@@ -224,7 +223,7 @@ public class HiveCqlInputFormat extends InputFormat<MapWritableComparable, MapWr
             return null;
         }
 
-        ExprNodeDesc filterExpr = Utilities.deserializeExpression(filterExprSerialized, jobConf);
+        ExprNodeDesc filterExpr = Utilities.deserializeExpression(filterExprSerialized);
         String encodedIndexedColumns = jobConf.get(AbstractCassandraSerDe.CASSANDRA_INDEXED_COLUMNS);
         Set<ColumnDef> indexedColumns = CqlPushdownPredicate.deserializeIndexedColumns(encodedIndexedColumns);
         if (indexedColumns.isEmpty()) {

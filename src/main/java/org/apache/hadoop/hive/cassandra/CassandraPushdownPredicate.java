@@ -2,6 +2,7 @@ package org.apache.hadoop.hive.cassandra;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+
 import org.apache.cassandra.db.marshal.AbstractType;
 import org.apache.cassandra.db.marshal.TypeParser;
 import org.apache.cassandra.exceptions.ConfigurationException;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import org.apache.thrift.protocol.TBinaryProtocol;
 
 public class CassandraPushdownPredicate {
@@ -188,7 +190,8 @@ public class CassandraPushdownPredicate {
         return exps;
     }
 
-    private static IndexExpression translateSearchCondition(IndexSearchCondition condition, Set<ColumnDef> columnInfos) throws IOException {
+    @SuppressWarnings("rawtypes")
+	private static IndexExpression translateSearchCondition(IndexSearchCondition condition, Set<ColumnDef> columnInfos) throws IOException {
         IndexExpression expr = new IndexExpression();
         String columnName = condition.getColumnDesc().getColumn();
         expr.setColumn_name(columnName.getBytes());
@@ -196,26 +199,31 @@ public class CassandraPushdownPredicate {
 
         ExprNodeConstantEvaluator eval = new ExprNodeConstantEvaluator(condition.getConstantDesc());
         byte[] value;
+        ByteStream.Output serializeStream = null;
         try {
             ObjectInspector objInspector = eval.initialize(null);
             Object writable = eval.evaluate(null);
-            ByteStream.Output serializeStream = new ByteStream.Output();
+            serializeStream = new ByteStream.Output();
 
             PrimitiveObjectInspector poi = (PrimitiveObjectInspector) objInspector;
             AbstractType validator = getValidator(columnInfos, columnName);
             ByteBuffer bytes = getIndexExpressionValue(condition.getConstantDesc(), poi, writable, validator);
             serializeStream.write(ByteBufferUtil.getArray(bytes));
 
-            value = new byte[serializeStream.getCount()];
-            System.arraycopy(serializeStream.getData(), 0, value, 0, serializeStream.getCount());
+            value = new byte[serializeStream.getLength()];
+            System.arraycopy(serializeStream.getData(), 0, value, 0, serializeStream.getLength());
         } catch (HiveException e) {
             throw new IOException(e);
+        }
+        finally {
+        	serializeStream.close();
         }
         expr.setValue(value);
         logger.info("IndexExpression.value : {}", new String(expr.getValue()));
         return expr;
     }
 
+    @SuppressWarnings("rawtypes")
     private static AbstractType getValidator(Set<ColumnDef> columnInfos, String columnName) {
         for (ColumnDef column : columnInfos) {
             if (new String(column.getName()).equals(columnName)) {
@@ -234,6 +242,7 @@ public class CassandraPushdownPredicate {
         throw new RuntimeException("Error finding validator class for column " + columnName);
     }
 
+    @SuppressWarnings("rawtypes")
     private static ByteBuffer getIndexExpressionValue(ExprNodeConstantDesc constantDesc, PrimitiveObjectInspector poi, Object writable, AbstractType validator) {
         logger.info("Primitive Category: {}, Validation class: {}, CassandraType: {}",
                 new Object[]{poi.getPrimitiveCategory(), validator.getClass().getName(), LazyCassandraUtils.getCassandraType(poi)});

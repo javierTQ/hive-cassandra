@@ -18,6 +18,7 @@ import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.metadata.HiveStorageHandler;
 import org.apache.hadoop.hive.ql.metadata.HiveStoragePredicateHandler;
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
+import org.apache.hadoop.hive.ql.plan.ExprNodeGenericFuncDesc;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.ql.security.authorization.HiveAuthorizationProvider;
 import org.apache.hadoop.hive.serde2.Deserializer;
@@ -61,7 +62,7 @@ public class CqlStorageHandler
         String columnInfo = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_COL_MAPPING);
         if (columnInfo == null) {
             columnInfo = CqlSerDe.createColumnMappingString(
-                    tableProperties.getProperty(org.apache.hadoop.hive.serde.Constants.LIST_COLUMNS));
+                    tableProperties.getProperty(org.apache.hadoop.hive.serde.serdeConstants.LIST_COLUMNS));
         }
         jobProperties.put(AbstractCassandraSerDe.CASSANDRA_COL_MAPPING, columnInfo);
 
@@ -343,7 +344,7 @@ public class CqlStorageHandler
 
             DecomposedPredicate decomposedPredicate = new DecomposedPredicate();
             decomposedPredicate.pushedPredicate = analyzer.translateSearchConditions(searchConditions);
-            decomposedPredicate.residualPredicate = residualPredicate;
+            decomposedPredicate.residualPredicate = (ExprNodeGenericFuncDesc) residualPredicate;
 
             return decomposedPredicate;
         } catch (CassandraException e) {
@@ -352,5 +353,11 @@ public class CqlStorageHandler
             return null;
         }
     }
+
+	@Override
+	public void configureJobConf(TableDesc table, JobConf jobConf) {
+		jobConf.setOutputFormat(table.getOutputFileFormatClass());
+        jobConf.setInputFormat(table.getInputFileFormatClass());		
+	}
 
 }

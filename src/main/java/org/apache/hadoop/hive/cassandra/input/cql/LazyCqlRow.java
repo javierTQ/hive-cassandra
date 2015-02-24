@@ -3,6 +3,7 @@ package org.apache.hadoop.hive.cassandra.input.cql;
 import org.apache.hadoop.hive.cassandra.serde.CassandraLazyFactory;
 import org.apache.hadoop.hive.serde2.lazy.ByteArrayRef;
 import org.apache.hadoop.hive.serde2.lazy.LazyObject;
+import org.apache.hadoop.hive.serde2.lazy.LazyObjectBase;
 import org.apache.hadoop.hive.serde2.lazy.LazyStruct;
 import org.apache.hadoop.hive.serde2.lazy.objectinspector.LazyMapObjectInspector;
 import org.apache.hadoop.hive.serde2.lazy.objectinspector.LazySimpleStructObjectInspector;
@@ -13,6 +14,7 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -81,7 +83,7 @@ public class LazyCqlRow extends LazyStruct {
             String columnName = cassandraColumns.get(fieldID);
             Text columnNameText = cassandraColumnsBB.get(fieldID);
 
-            LazyObject obj = getFields()[fieldID];
+            LazyObjectBase obj = getFields()[fieldID];
             if (columnName.endsWith(":")) {
                 // user wants all columns as a map
                 // TODO this into a LazyCassandraCellMap

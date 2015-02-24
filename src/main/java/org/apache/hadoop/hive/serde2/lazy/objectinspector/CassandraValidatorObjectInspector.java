@@ -19,7 +19,7 @@ public class CassandraValidatorObjectInspector
     private final AbstractType validator;
 
     public CassandraValidatorObjectInspector(AbstractType validator) {
-        super(PrimitiveObjectInspectorUtils.stringTypeEntry);
+        super();
         this.validator = validator;
     }
 

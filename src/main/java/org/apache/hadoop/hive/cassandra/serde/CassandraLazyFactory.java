@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cassandra.db.marshal.AbstractType;
+import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.lazy.CassandraLazyBinary;
 import org.apache.hadoop.hive.serde2.lazy.CassandraLazyBoolean;
 import org.apache.hadoop.hive.serde2.lazy.CassandraLazyDouble;
@@ -136,13 +137,17 @@ public class CassandraLazyFactory {
             byte escapeChar) {
 
         if (validatorTypes.size() == 0) {
-            return LazyFactory.createLazyStructInspector(columnNames,
-                    typeInfos,
-                    separators,
-                    nullSequence,
-                    lastColumnTakesRest,
-                    escaped,
-                    escapeChar);
+            try {
+				return LazyFactory.createLazyStructInspector(columnNames,
+				        typeInfos,
+				        separators,
+				        nullSequence,
+				        lastColumnTakesRest,
+				        escaped,
+				        escapeChar);
+			} catch (SerDeException e) {
+				e.printStackTrace();
+			}
 
         }
 

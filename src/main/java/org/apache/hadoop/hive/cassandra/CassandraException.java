@@ -1,8 +1,10 @@
 package org.apache.hadoop.hive.cassandra;
 
 public class CassandraException extends Exception {
+	
+	private static final long serialVersionUID = 1L;
 
-    public CassandraException() {
+	public CassandraException() {
         // TODO Auto-generated constructor stub
     }
 
