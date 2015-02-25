@@ -4,6 +4,7 @@ import org.apache.cassandra.thrift.ColumnDef;
 import org.apache.cassandra.thrift.KsDef;
 import org.apache.cassandra.thrift.NotFoundException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.cassandra.cql.CqlPushdownPredicate;
 import org.apache.hadoop.hive.cassandra.input.HiveCassandraStandardColumnInputFormat;
 import org.apache.hadoop.hive.cassandra.output.HiveCassandraOutputFormat;
 import org.apache.hadoop.hive.cassandra.serde.AbstractCassandraSerDe;
@@ -357,9 +358,148 @@ public class CassandraStorageHandler
     }
 
 	@Override
+	// FIXME
 	public void configureJobConf(TableDesc table, JobConf jobConf) {
-        jobConf.setOutputFormat(table.getOutputFileFormatClass());
-        jobConf.setInputFormat(table.getInputFileFormatClass());
+        Properties tableProperties = table.getProperties();
+		
+		jobConf.setOutputFormat(table.getOutputFileFormatClass());
+        jobConf.setInputFormat(table.getInputFileFormatClass());        
+
+        // Identify Keyspace
+        String keyspace = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_KEYSPACE_NAME);
+        if (keyspace == null) {
+            keyspace = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_DB);
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_KEYSPACE_NAME, keyspace);
+
+        // Identify ColumnFamily
+        String columnFamily = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_CF_NAME);
+        if (columnFamily == null) {
+            columnFamily = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_NAME);
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_CF_NAME, columnFamily);
+        
+        // Identify columns mappings
+        String columnInfo = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_COL_MAPPING);
+        if (columnInfo == null) {
+            columnInfo = tableProperties.getProperty(org.apache.hadoop.hive.serde.serdeConstants.LIST_COLUMNS);
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_COL_MAPPING, columnInfo);
+        
+        // Identify cassandra host
+        String host = configuration.get(AbstractCassandraSerDe.CASSANDRA_HOST);
+        if (host == null) {
+            host = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_HOST, AbstractCassandraSerDe.DEFAULT_CASSANDRA_HOST);
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_HOST, host);
+
+        // Identify cassandra port
+        String port = configuration.get(AbstractCassandraSerDe.CASSANDRA_PORT);
+        if (port == null) {
+            port = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_PORT, AbstractCassandraSerDe.DEFAULT_CASSANDRA_PORT);
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_PORT, port);
+        
+        // Identify max threads
+        String maxThreads = configuration.get(AbstractCassandraSerDe.CASSANDRA_HADOOP_MAX_THREADS_KEY);
+        if (maxThreads == null) {
+            maxThreads = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_HADOOP_MAX_THREADS_KEY, AbstractCassandraSerDe.DEFAULT_CASSANDRA_HADOOP_MAX_THREADS);
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_HADOOP_MAX_THREADS_KEY, maxThreads);
+
+        // Identify max retries
+        String maxRetries = configuration.get(AbstractCassandraSerDe.CASSANDRA_HADOOP_RETRIES_KEY);
+        if (maxRetries == null) {
+            maxRetries = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_HADOOP_RETRIES_KEY, AbstractCassandraSerDe.DEFAULT_CASSANDRA_HADOOP_RETRIES);
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_HADOOP_RETRIES_KEY, maxRetries);
+        
+        // Identify partitioner
+        String partitioner = configuration.get(AbstractCassandraSerDe.CASSANDRA_PARTITIONER);
+        if (partitioner == null) {
+        	partitioner = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_PARTITIONER, "org.apache.cassandra.dht.Murmur3Partitioner");
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_PARTITIONER, partitioner);
+
+        // Identify consistency level
+        String consistency = configuration.get(AbstractCassandraSerDe.CASSANDRA_CONSISTENCY_LEVEL);
+        if (consistency == null) {
+        	consistency = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_CONSISTENCY_LEVEL, AbstractCassandraSerDe.DEFAULT_CONSISTENCY_LEVEL);
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_CONSISTENCY_LEVEL, consistency);
+        
+        // Identify batchSize
+        String batchSize = configuration.get(AbstractCassandraSerDe.CASSANDRA_RANGE_BATCH_SIZE);
+        if (batchSize == null) {
+        	batchSize = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_RANGE_BATCH_SIZE, 
+        			Integer.toString(AbstractCassandraSerDe.DEFAULT_RANGE_BATCH_SIZE));
+        } 
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_RANGE_BATCH_SIZE, batchSize);
+        
+        // Identify slice size
+        String slice = configuration.get(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_SIZE);
+        if (slice == null) {
+            slice = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_SIZE,
+            		Integer.toString(AbstractCassandraSerDe.DEFAULT_SLICE_PREDICATE_SIZE));
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_SIZE, slice);
+
+        // Identify split size
+        String split = configuration.get(AbstractCassandraSerDe.CASSANDRA_SPLIT_SIZE); 
+        if (split == null) {
+        	split = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_SPLIT_SIZE,
+        			Integer.toString(AbstractCassandraSerDe.DEFAULT_SPLIT_SIZE));
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_SPLIT_SIZE, split);
+        
+        // Identify batch size
+        String batch = configuration.get(AbstractCassandraSerDe.CASSANDRA_BATCH_MUTATION_SIZE);
+        if (batch == null) {
+            batch = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_BATCH_MUTATION_SIZE, Integer.toString(AbstractCassandraSerDe.DEFAULT_BATCH_MUTATION_SIZE));
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_BATCH_MUTATION_SIZE, batch);
+
+        // Identify slice range start
+        String sliceStart = configuration.get(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_START); 
+        if (sliceStart == null) {
+        	sliceStart = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_START, "");
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_START, sliceStart);
+
+        // Identify slice range finish
+        String sliceEnd = configuration.get(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_FINISH); 
+        if (sliceEnd == null) {
+        	sliceEnd = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_FINISH, "");
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_FINISH, sliceEnd);
+
+        // Identify slice range comparator
+        String sliceComp = configuration.get(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_COMPARATOR); 
+        if (sliceComp == null) {
+        	sliceComp = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_COMPARATOR, "");
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_COMPARATOR, sliceComp);
+
+        // Identify slice range reversed
+        String sliceRev = configuration.get(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_REVERSED); 
+        if (sliceRev == null) {
+        	sliceRev = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_REVERSED, "false");
+        }
+        jobConf.set(AbstractCassandraSerDe.CASSANDRA_SLICE_PREDICATE_RANGE_REVERSED, sliceRev);
+
+        //Set the indexed column names - leave unset if we have problems determining them
+        String indexedColumns = tableProperties.getProperty(AbstractCassandraSerDe.CASSANDRA_INDEXED_COLUMNS);
+        if (indexedColumns != null) {
+        	jobConf.set(AbstractCassandraSerDe.CASSANDRA_INDEXED_COLUMNS, indexedColumns);
+        } else {
+            try {
+                Set<ColumnDef> columns = CqlPushdownPredicate.getIndexedColumns(host, Integer.parseInt(port), keyspace, columnFamily);
+                jobConf.set(AbstractCassandraSerDe.CASSANDRA_INDEXED_COLUMNS, CqlPushdownPredicate.serializeIndexedColumns(columns));
+            } catch (CassandraException e) {
+                // this results in the property remaining unset on the Jobconf, so indexes will not be used on the C* side
+                logger.info("Error determining cassandra indexed columns, will not include in JobConf", e);
+            }
+        }
 	}
 
 }

@@ -3,6 +3,7 @@ hive-cassandra
 
 Fork of https://github.com/2013Commons/hive-cassandra that fix project to read from a cassandra table using hive 0.14 external table.
 
+<b>NOTE:</b> Work in progress. Currently not works when the query generate a mapreduce job. 
 
 ==============
 
